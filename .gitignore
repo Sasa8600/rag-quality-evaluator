@@ -1,0 +1,50 @@
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Maven
+target/
+*.jar
+*.war
+*.ear
+.m2/
+
+# Build
+build/
+out/
+
+# Local env
+.env
+.env.local
+application-local.yml
+
+# Logs
+logs/
+*.log
+
+# Node (if using frontend build tools)
+node_modules/
+dist/
+build/
+
+# Database
+*.db
+*.sqlite
+pgdata/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# IDE settings
+.classpath
+.project
+.settings/
+
+# Ollama local
+ollama/
+.ollama/
