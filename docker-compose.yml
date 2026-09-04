@@ -1,29 +1,55 @@
-version: '3.8'
+# One-command local stack for the RAG Quality Evaluator.
+# Ollama is NOT containerized here — run it natively on the host
+# (better model performance) with `ollama serve`, models pulled:
+#   ollama pull nomic-embed-text && ollama pull mistral
+# The backend container reaches it via host.docker.internal:11434.
 
 services:
-  postgres:
+  db:
+    image: pgvector/pgvector:pg17
+    container_name: postgres-pgvector
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: dev_user
+      POSTGRES_PASSWORD: dev_password
+      POSTGRES_DB: rag_evaluator
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dev_user -d rag_evaluator"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: rag-evaluator-postgres
-    environment:
-      POSTGRES_DB: rag_evaluator
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres123
+    container_name: rag-evaluator-backend
+    depends_on:
+      db:
+        condition: service_healthy
     ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - rag-network
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/rag_evaluator
+      SPRING_DATASOURCE_USERNAME: dev_user
+      SPRING_DATASOURCE_PASSWORD: dev_password
+      OLLAMA_BASE_URL: http://host.docker.internal:11434
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: rag-evaluator-frontend
+    depends_on:
+      - backend
+    ports:
+      - "4200:80"
 
 volumes:
   postgres_data:
-
-networks:
-  rag-network:

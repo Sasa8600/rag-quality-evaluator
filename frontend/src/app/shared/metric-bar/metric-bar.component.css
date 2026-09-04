@@ -1,0 +1,31 @@
+.metric-row {
+  display: grid;
+  grid-template-columns: 140px 1fr 48px;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.25rem 0;
+}
+.metric-label {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+.metric-track {
+  height: 8px;
+  background: var(--track-bg);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.metric-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+.metric-fill.high { background: var(--score-high); }
+.metric-fill.mid { background: var(--score-mid); }
+.metric-fill.low { background: var(--score-low); }
+.metric-value {
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  color: var(--text-primary);
+}

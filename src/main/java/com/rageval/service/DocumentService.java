@@ -52,15 +52,21 @@ public class DocumentService {
             log.info("Document chunked into {} parts", chunks.size());
             
             // Generate embeddings for chunks
+            int embeddingCount = 0;
             for (DocumentChunk chunk : chunks) {
-                embedChunk(chunk);
+                try {
+                    embedChunk(chunk);
+                    embeddingCount++;
+                } catch (Exception e) {
+                    log.error("Failed to embed chunk {}: {}", chunk.getId(), e.getMessage());
+                }
             }
             
-            log.info("Embeddings generated for document: {}", name);
+            log.info("Successfully generated {} embeddings for document: {}", embeddingCount, name);
             
         } catch (Exception e) {
             log.error("Error ingesting document: {}", name, e);
-            throw new RuntimeException("Failed to ingest document", e);
+            throw new RuntimeException("Failed to ingest document: " + e.getMessage(), e);
         }
     }
     
@@ -85,18 +91,39 @@ public class DocumentService {
     }
     
     private void embedChunk(DocumentChunk chunk) {
-        var embedding = embeddingService.generateEmbedding(chunk.getChunkText());
-        if (embedding != null) {
+        try {
+            List<Double> embedding = embeddingService.generateEmbedding(chunk.getChunkText());
+            if (embedding == null || embedding.isEmpty()) {
+                log.warn("No embedding generated for chunk {}", chunk.getId());
+                return;
+            }
+            
             String vectorStr = embeddingService.embeddingToVectorString(embedding);
-            Embedding embeddingEntity = Embedding.builder()
-                    .documentChunk(chunk)
-                    .embedding(vectorStr)
-                    .build();
-            embeddingRepository.save(embeddingEntity);
+            log.debug("Saving embedding for chunk {}: {}", chunk.getId(), vectorStr.substring(0, Math.min(50, vectorStr.length())));
+            
+            embeddingRepository.saveEmbeddingWithVector(chunk.getId(), vectorStr);
+            
+            log.debug("Embedding saved successfully for chunk {}", chunk.getId());
+        } catch (Exception e) {
+            log.error("Error embedding chunk {}: {}", chunk.getId(), e.getMessage(), e);
+            throw new RuntimeException("Failed to embed chunk: " + e.getMessage(), e);
         }
     }
     
     public List<Document> getAllDocuments() {
         return documentRepository.findAll();
+    }
+
+    public Document getDocumentById(Long id) {
+        return documentRepository.findById(id).orElse(null);
+    }
+
+    @Transactional
+    public void deleteDocument(Long id) {
+        if (!documentRepository.existsById(id)) {
+            throw new RuntimeException("Document not found: " + id);
+        }
+        documentRepository.deleteById(id);
+        log.info("Document deleted: {}", id);
     }
 }

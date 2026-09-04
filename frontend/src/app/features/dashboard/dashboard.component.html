@@ -1,0 +1,63 @@
+<h1>Dashboard</h1>
+<p class="subtitle">Overview of your RAG system and evaluation history.</p>
+
+@if (error()) {
+  <div class="card error-card">{{ error() }}</div>
+}
+
+@if (!error()) {
+  <div class="stat-grid">
+    <div class="card stat">
+      <span class="stat-value">{{ documentCount() }}</span>
+      <span class="stat-label">Documents ingested</span>
+      <a routerLink="/documents" class="stat-link">Manage →</a>
+    </div>
+    <div class="card stat">
+      <span class="stat-value">{{ testQueryCount() }}</span>
+      <span class="stat-label">Test queries</span>
+      <a routerLink="/evaluation" class="stat-link">Evaluate →</a>
+    </div>
+    <div class="card stat">
+      <span class="stat-value">{{ runs().length }}</span>
+      <span class="stat-label">Evaluation runs</span>
+      <a routerLink="/query" class="stat-link">Try a query →</a>
+    </div>
+  </div>
+
+  @if (latestRun(); as run) {
+    <div class="card" style="margin-top:1.5rem;">
+      <h3>Latest run: {{ run.runName }}</h3>
+      <p class="subtitle">{{ run.totalQueries }} queries evaluated</p>
+      <app-metric-bar label="RAG Score" [value]="run.avgRagScore"></app-metric-bar>
+      <app-metric-bar label="Precision@K" [value]="run.avgPrecision"></app-metric-bar>
+      <app-metric-bar label="Recall" [value]="run.avgRecall"></app-metric-bar>
+      <app-metric-bar label="Answer Relevance" [value]="run.avgAnswerRelevance"></app-metric-bar>
+      <app-metric-bar label="Faithfulness" [value]="run.avgFaithfulness"></app-metric-bar>
+    </div>
+  } @else if (!loading()) {
+    <div class="card empty-card" style="margin-top:1.5rem;">
+      No evaluation runs yet. Head to <a routerLink="/evaluation">Evaluation</a> to seed test data and run one.
+    </div>
+  }
+
+  @if (runs().length > 1) {
+    <div class="card" style="margin-top:1.5rem;">
+      <h3>Run history</h3>
+      <table class="run-table">
+        <thead>
+          <tr><th>Run</th><th>Queries</th><th>RAG Score</th><th>When</th></tr>
+        </thead>
+        <tbody>
+          @for (run of runs(); track run.id) {
+            <tr>
+              <td>{{ run.runName }}</td>
+              <td>{{ run.totalQueries }}</td>
+              <td>{{ run.avgRagScore | number: '1.2-2' }}</td>
+              <td>{{ run.createdAt | date: 'MMM d, HH:mm' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+}

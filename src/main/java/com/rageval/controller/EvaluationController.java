@@ -71,6 +71,46 @@ public class EvaluationController {
         }
     }
     
+    @GetMapping("/runs")
+    public ResponseEntity<Map<String, Object>> getRuns() {
+        try {
+            List<EvaluationRun> runs = evaluationService.getAllRuns();
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "success");
+            response.put("runs", runs);
+            response.put("count", runs.size());
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("Error fetching evaluation runs", e);
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "error");
+            response.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    @GetMapping("/results")
+    public ResponseEntity<Map<String, Object>> getAllResults() {
+        try {
+            List<EvaluationResult> results = evaluationService.getAllResults();
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "success");
+            response.put("results", results);
+            response.put("count", results.size());
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("Error fetching results", e);
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "error");
+            response.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
     @GetMapping("/results/{queryId}")
     public ResponseEntity<Map<String, Object>> getResults(@PathVariable Long queryId) {
         try {

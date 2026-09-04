@@ -1,0 +1,15 @@
+.subtitle { color: var(--text-secondary); margin-bottom: 1.5rem; font-size: 0.9rem; }
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+}
+.stat { display: flex; flex-direction: column; gap: 0.25rem; }
+.stat-value { font-size: 2rem; font-weight: 700; }
+.stat-label { color: var(--text-secondary); font-size: 0.85rem; }
+.stat-link { margin-top: 0.5rem; color: var(--accent); text-decoration: none; font-size: 0.85rem; }
+.error-card { color: var(--score-low); }
+.empty-card { color: var(--text-secondary); font-size: 0.9rem; }
+.run-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 0.5rem; }
+.run-table th { text-align: left; color: var(--text-secondary); font-weight: 500; padding: 0.4rem; border-bottom: 1px solid var(--border); }
+.run-table td { padding: 0.4rem; border-bottom: 1px solid var(--border); }

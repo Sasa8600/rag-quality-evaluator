@@ -1,0 +1,7 @@
+<div class="metric-row">
+  <span class="metric-label">{{ label }}</span>
+  <div class="metric-track">
+    <div class="metric-fill" [class]="level" [style.width.%]="pct"></div>
+  </div>
+  <span class="metric-value">{{ (value ?? 0) | number: '1.2-2' }}</span>
+</div>

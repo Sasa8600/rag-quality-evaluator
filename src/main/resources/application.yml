@@ -3,8 +3,8 @@ spring:
     name: rag-quality-evaluator
   datasource:
     url: jdbc:postgresql://localhost:5432/rag_evaluator
-    username: postgres
-    password: postgres
+    username: dev_user
+    password: dev_password
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:

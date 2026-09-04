@@ -1,0 +1,26 @@
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="brand-dot"></span>
+      <span class="brand-name">RAG Evaluator</span>
+    </div>
+    <nav>
+      <a routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
+      <a routerLink="/documents" routerLinkActive="active">Documents</a>
+      <a routerLink="/query" routerLinkActive="active">Query Console</a>
+      <a routerLink="/evaluation" routerLinkActive="active">Evaluation</a>
+    </nav>
+    <div class="status-pill">
+      @if (backendUp() === true) {
+        <span class="dot ok"></span> Backend online
+      } @else if (backendUp() === false) {
+        <span class="dot down"></span> Backend unreachable
+      } @else {
+        <span class="dot"></span> Checking...
+      }
+    </div>
+  </aside>
+  <main class="content">
+    <router-outlet></router-outlet>
+  </main>
+</div>

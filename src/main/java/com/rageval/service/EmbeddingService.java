@@ -13,6 +13,7 @@ import org.springframework.http.MediaType;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -66,16 +67,18 @@ public class EmbeddingService {
      */
     public String embeddingToVectorString(List<Double> embedding) {
         if (embedding == null || embedding.isEmpty()) {
-            return null;
+            return "[]";
         }
-        StringBuilder sb = new StringBuilder("[");
-        for (int i = 0; i < embedding.size(); i++) {
-            sb.append(embedding.get(i));
-            if (i < embedding.size() - 1) {
-                sb.append(",");
-            }
-        }
-        sb.append("]");
-        return sb.toString();
+//        StringBuilder sb = new StringBuilder("[");
+//        for (int i = 0; i < embedding.size(); i++) {
+//            sb.append(embedding.get(i));
+//            if (i < embedding.size() - 1) {
+//                sb.append(",");
+//            }
+//        }
+//        sb.append("]");
+        return "[" + embedding.stream()
+                .map(String::valueOf)
+                .collect(Collectors.joining(",")) + "]";
     }
 }

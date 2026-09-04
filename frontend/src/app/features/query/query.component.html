@@ -1,0 +1,23 @@
+<h1>Query Console</h1>
+<p class="subtitle">Test the RAG pipeline end-to-end: retrieval + generation.</p>
+
+<div class="card">
+  <label>Your question</label>
+  <textarea [(ngModel)]="query" rows="3" placeholder="e.g. What is KYC compliance?"
+            (keydown.enter)="$event.preventDefault(); ask()"></textarea>
+  <button class="btn" style="margin-top:0.75rem;" (click)="ask()" [disabled]="loading()">
+    {{ loading() ? 'Thinking…' : 'Ask' }}
+  </button>
+</div>
+
+@if (error()) {
+  <div class="card error-card" style="margin-top:1.5rem;">{{ error() }}</div>
+}
+
+@if (result(); as res) {
+  <div class="card" style="margin-top:1.5rem;">
+    <span class="badge info">{{ res.retrievedChunks }} chunks retrieved</span>
+    <h3 style="margin-top:0.75rem;">Answer</h3>
+    <p class="answer">{{ res.answer }}</p>
+  </div>
+}

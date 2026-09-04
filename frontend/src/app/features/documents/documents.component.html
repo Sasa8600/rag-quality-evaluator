@@ -1,0 +1,50 @@
+<h1>Documents</h1>
+<p class="subtitle">Ingest source documents — they're chunked and embedded automatically for retrieval.</p>
+
+<div class="card">
+  <h3>Add a document</h3>
+  <div class="form-grid">
+    <div>
+      <label>Name</label>
+      <input [(ngModel)]="name" placeholder="e.g. Fraud_Detection_Basics" />
+    </div>
+    <div>
+      <label>Source (optional)</label>
+      <input [(ngModel)]="source" placeholder="e.g. internal_wiki" />
+    </div>
+  </div>
+  <div style="margin-top:0.75rem;">
+    <label>Content</label>
+    <textarea [(ngModel)]="content" rows="6" placeholder="Paste document text..."></textarea>
+  </div>
+  @if (error()) { <p class="msg error">{{ error() }}</p> }
+  @if (successMsg()) { <p class="msg success">{{ successMsg() }}</p> }
+  <button class="btn" style="margin-top:0.75rem;" (click)="submit()" [disabled]="submitting()">
+    {{ submitting() ? 'Ingesting…' : 'Ingest document' }}
+  </button>
+</div>
+
+<div class="card" style="margin-top:1.5rem;">
+  <h3>Ingested documents ({{ documents().length }})</h3>
+  @if (loading()) {
+    <p class="subtitle">Loading…</p>
+  } @else if (documents().length === 0) {
+    <p class="subtitle">No documents yet. Add one above.</p>
+  } @else {
+    <table class="doc-table">
+      <thead>
+        <tr><th>Name</th><th>Source</th><th>Ingested</th><th></th></tr>
+      </thead>
+      <tbody>
+        @for (doc of documents(); track doc.id) {
+          <tr>
+            <td>{{ doc.name }}</td>
+            <td>{{ doc.source }}</td>
+            <td>{{ doc.createdAt | date: 'MMM d, HH:mm' }}</td>
+            <td><button class="btn btn-danger" (click)="remove(doc.id)">Delete</button></td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+</div>

@@ -1,0 +1,8 @@
+.subtitle { color: var(--text-secondary); margin-bottom: 1.5rem; font-size: 0.9rem; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+.msg { font-size: 0.85rem; margin: 0.5rem 0 0; }
+.msg.error { color: var(--score-low); }
+.msg.success { color: var(--score-high); }
+.doc-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 0.5rem; }
+.doc-table th { text-align: left; color: var(--text-secondary); font-weight: 500; padding: 0.4rem; border-bottom: 1px solid var(--border); }
+.doc-table td { padding: 0.4rem; border-bottom: 1px solid var(--border); }

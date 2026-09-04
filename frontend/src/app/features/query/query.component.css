@@ -1,0 +1,3 @@
+.subtitle { color: var(--text-secondary); margin-bottom: 1.5rem; font-size: 0.9rem; }
+.error-card { color: var(--score-low); }
+.answer { white-space: pre-wrap; line-height: 1.5; font-size: 0.95rem; }

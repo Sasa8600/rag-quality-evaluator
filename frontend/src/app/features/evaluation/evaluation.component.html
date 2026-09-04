@@ -1,0 +1,97 @@
+<h1>Evaluation</h1>
+<p class="subtitle">Seed ground-truth test queries, then run a batch evaluation across all 9 RAG quality metrics.</p>
+
+@if (error()) { <div class="card error-card">{{ error() }}</div> }
+@if (successMsg()) { <div class="card success-card">{{ successMsg() }}</div> }
+
+<div class="card">
+  <div class="row-between">
+    <div>
+      <h3>Test queries ({{ testQueries().length }})</h3>
+      <p class="subtitle">Ground-truth queries with expected relevant document IDs.</p>
+    </div>
+    <button class="btn btn-secondary" (click)="seed()" [disabled]="seeding()">
+      {{ seeding() ? 'Seeding…' : 'Seed sample test data' }}
+    </button>
+  </div>
+  @if (testQueries().length > 0) {
+    <ul class="query-list">
+      @for (q of testQueries(); track q.id) {
+        <li>#{{ q.id }} — {{ q.queryText }}</li>
+      }
+    </ul>
+  }
+</div>
+
+<div class="card" style="margin-top:1.5rem;">
+  <div class="row-between">
+    <div>
+      <label>Run name</label>
+      <input [(ngModel)]="runName" style="width:220px;" />
+    </div>
+    <button class="btn" (click)="runBatch()" [disabled]="running() || testQueries().length === 0">
+      {{ running() ? 'Running…' : 'Run batch evaluation' }}
+    </button>
+  </div>
+
+  @if (running() || progressStatus() === 'complete') {
+    <div class="progress-block">
+      <div class="progress-track">
+        <div class="progress-fill" [style.width.%]="progressPct"></div>
+      </div>
+      <p class="subtitle">{{ progressCurrent() }} / {{ progressTotal() }} queries — {{ progressStatus() }}</p>
+      @if (lastQueryText()) {
+        <p class="subtitle">Last: "{{ lastQueryText() }}" — RAG score {{ lastRagScore() | number: '1.2-2' }}</p>
+      }
+    </div>
+  }
+</div>
+
+@if (runs().length > 0) {
+  <div class="card" style="margin-top:1.5rem;">
+    <h3>Run history</h3>
+    <table class="run-table">
+      <thead><tr><th>Run</th><th>Queries</th><th>RAG Score</th><th>Precision</th><th>Recall</th><th>When</th></tr></thead>
+      <tbody>
+        @for (run of runs(); track run.id) {
+          <tr>
+            <td>{{ run.runName }}</td>
+            <td>{{ run.totalQueries }}</td>
+            <td>{{ run.avgRagScore | number: '1.2-2' }}</td>
+            <td>{{ run.avgPrecision | number: '1.2-2' }}</td>
+            <td>{{ run.avgRecall | number: '1.2-2' }}</td>
+            <td>{{ run.createdAt | date: 'MMM d, HH:mm' }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}
+
+@if (results().length > 0) {
+  <div class="card" style="margin-top:1.5rem;">
+    <h3>Per-query results ({{ results().length }})</h3>
+    @for (r of results(); track r.id) {
+      <details class="result-item">
+        <summary>
+          <span class="q-text">{{ r.testQuery?.queryText }}</span>
+          <span class="badge" [class.success]="r.ragScore >= 0.7" [class.error]="r.ragScore < 0.4"
+                [class.info]="r.ragScore >= 0.4 && r.ragScore < 0.7">
+            RAG {{ r.ragScore | number: '1.2-2' }}
+          </span>
+        </summary>
+        <div class="result-body">
+          <p class="answer-preview">{{ r.generatedAnswer }}</p>
+          <app-metric-bar label="Precision@K" [value]="r.precisionAtK"></app-metric-bar>
+          <app-metric-bar label="Recall" [value]="r.recall"></app-metric-bar>
+          <app-metric-bar label="MRR" [value]="r.mrr"></app-metric-bar>
+          <app-metric-bar label="NDCG" [value]="r.ndcg"></app-metric-bar>
+          <app-metric-bar label="Answer Relevance" [value]="r.answerRelevance"></app-metric-bar>
+          <app-metric-bar label="Faithfulness" [value]="r.faithfulness"></app-metric-bar>
+          <app-metric-bar label="Context Precision" [value]="r.contextPrecision"></app-metric-bar>
+          <app-metric-bar label="Context Recall" [value]="r.contextRecall"></app-metric-bar>
+        </div>
+      </details>
+    }
+  </div>
+}
