@@ -21,6 +21,12 @@ export class DocumentsComponent implements OnInit {
   name = '';
   content = '';
   source = '';
+  chunkSize: number | null = null;
+  overlap: number | null = null;
+  showAdvanced = false;
+
+  readonly pdfUploading = signal(false);
+  selectedFile: File | null = null;
 
   constructor(private ragApi: RagApiService) {}
 
@@ -50,7 +56,8 @@ export class DocumentsComponent implements OnInit {
     this.submitting.set(true);
     this.error.set(null);
     this.successMsg.set(null);
-    this.ragApi.ingestDocument(this.name.trim(), this.content.trim(), this.source.trim() || undefined).subscribe({
+    this.ragApi.ingestDocument(this.name.trim(), this.content.trim(), this.source.trim() || undefined,
+      this.chunkSize ?? undefined, this.overlap ?? undefined).subscribe({
       next: (res) => {
         this.successMsg.set(res.message ?? 'Document ingested.');
         this.name = '';
@@ -62,6 +69,34 @@ export class DocumentsComponent implements OnInit {
       error: (err) => {
         this.error.set(err?.error?.message ?? 'Failed to ingest document.');
         this.submitting.set(false);
+      },
+    });
+  }
+
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.selectedFile = input.files && input.files.length > 0 ? input.files[0] : null;
+  }
+
+  uploadPdf(): void {
+    if (!this.selectedFile) {
+      this.error.set('Choose a PDF file first.');
+      return;
+    }
+    this.pdfUploading.set(true);
+    this.error.set(null);
+    this.successMsg.set(null);
+    this.ragApi.ingestPdf(this.selectedFile, this.name.trim() || undefined, this.source.trim() || undefined,
+      this.chunkSize ?? undefined, this.overlap ?? undefined).subscribe({
+      next: (res) => {
+        this.successMsg.set(res.message ?? 'PDF ingested.');
+        this.selectedFile = null;
+        this.pdfUploading.set(false);
+        this.load();
+      },
+      error: (err) => {
+        this.error.set(err?.error?.message ?? 'Failed to ingest PDF.');
+        this.pdfUploading.set(false);
       },
     });
   }

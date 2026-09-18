@@ -12,12 +12,16 @@ import { RagApiService } from './core/services/rag-api.service';
 export class App implements OnInit {
   protected readonly title = signal('RAG Quality Evaluator');
   protected readonly backendUp = signal<boolean | null>(null);
+  protected readonly llmProvider = signal<string | null>(null);
 
   constructor(private ragApi: RagApiService) {}
 
   ngOnInit(): void {
     this.ragApi.health().subscribe({
-      next: () => this.backendUp.set(true),
+      next: (res) => {
+        this.backendUp.set(true);
+        this.llmProvider.set((res as { llmProvider?: string }).llmProvider ?? null);
+      },
       error: () => this.backendUp.set(false),
     });
   }

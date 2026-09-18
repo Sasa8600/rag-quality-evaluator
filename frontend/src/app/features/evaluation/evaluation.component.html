@@ -17,17 +17,49 @@
   @if (testQueries().length > 0) {
     <ul class="query-list">
       @for (q of testQueries(); track q.id) {
-        <li>#{{ q.id }} — {{ q.queryText }}</li>
+        <li>
+          <span>#{{ q.id }} — {{ q.queryText }}
+            @if (!q.relevantDocIds) {
+              <span class="badge" title="No ground truth set — Precision@K/Recall/MRR/NDCG/Context Recall will report as N/A for this query">no ground truth</span>
+            }
+          </span>
+          <button class="btn-link" (click)="deleteTestQuery(q.id)" title="Delete this test query">delete</button>
+        </li>
       }
     </ul>
   }
+
+  <div class="add-query-form">
+    <h4>Add a custom test query</h4>
+    <p class="subtitle">Test against your own uploaded documents instead of the sample fraud/payment/KYC queries. Leave relevant chunk IDs blank if you don't know them — Precision@K/Recall/MRR/NDCG/Context Recall will show as N/A rather than a misleading 0.00.</p>
+    <input [(ngModel)]="newQueryText" placeholder="Query text, e.g. How many days did the mortality calculator say?" />
+    <input [(ngModel)]="newExpectedAnswer" placeholder="Expected answer (optional, for your own reference)" />
+    <input [(ngModel)]="newRelevantDocIds" placeholder="Relevant chunk IDs, comma-separated (optional)" />
+    <button class="btn btn-secondary" (click)="addTestQuery()" [disabled]="addingQuery()">
+      {{ addingQuery() ? 'Adding…' : 'Add test query' }}
+    </button>
+  </div>
 </div>
 
 <div class="card" style="margin-top:1.5rem;">
   <div class="row-between">
-    <div>
-      <label>Run name</label>
-      <input [(ngModel)]="runName" style="width:220px;" />
+    <div class="options-row">
+      <div>
+        <label>Run name</label>
+        <input [(ngModel)]="runName" style="width:200px;" />
+      </div>
+      <div>
+        <label>Top-K</label>
+        <input type="number" [(ngModel)]="topK" min="1" max="10" style="width:80px;" />
+      </div>
+      <div>
+        <label>Retrieval mode</label>
+        <select [(ngModel)]="retrievalMode" style="width:180px;">
+          <option value="VECTOR">Vector (semantic)</option>
+          <option value="KEYWORD">Keyword (full-text)</option>
+          <option value="HYBRID">Hybrid (RRF-fused)</option>
+        </select>
+      </div>
     </div>
     <button class="btn" (click)="runBatch()" [disabled]="running() || testQueries().length === 0">
       {{ running() ? 'Running…' : 'Run batch evaluation' }}
@@ -49,17 +81,24 @@
 
 @if (runs().length > 0) {
   <div class="card" style="margin-top:1.5rem;">
-    <h3>Run history</h3>
+    <div class="row-between">
+      <h3>Run history</h3>
+      <a class="btn btn-secondary" [href]="runsExportUrl" target="_blank">Export runs CSV</a>
+    </div>
+    <p class="subtitle">Tick up to 2 runs to compare them (e.g. different top-K or retrieval modes) below.</p>
     <table class="run-table">
-      <thead><tr><th>Run</th><th>Queries</th><th>RAG Score</th><th>Precision</th><th>Recall</th><th>When</th></tr></thead>
+      <thead><tr><th></th><th>Run</th><th>Top-K</th><th>Mode</th><th>Queries</th><th>RAG Score</th><th>Precision</th><th>Recall</th><th>When</th></tr></thead>
       <tbody>
         @for (run of runs(); track run.id) {
-          <tr>
+          <tr [class.selected-row]="compareIds().includes(run.id)">
+            <td><input type="checkbox" [checked]="compareIds().includes(run.id)" (change)="toggleCompare(run.id)" /></td>
             <td>{{ run.runName }}</td>
+            <td>{{ run.topK ?? '—' }}</td>
+            <td>{{ run.retrievalMode ?? '—' }}</td>
             <td>{{ run.totalQueries }}</td>
             <td>{{ run.avgRagScore | number: '1.2-2' }}</td>
-            <td>{{ run.avgPrecision | number: '1.2-2' }}</td>
-            <td>{{ run.avgRecall | number: '1.2-2' }}</td>
+            <td>{{ run.avgPrecision === null ? 'N/A' : (run.avgPrecision | number: '1.2-2') }}</td>
+            <td>{{ run.avgRecall === null ? 'N/A' : (run.avgRecall | number: '1.2-2') }}</td>
             <td>{{ run.createdAt | date: 'MMM d, HH:mm' }}</td>
           </tr>
         }
@@ -68,9 +107,44 @@
   </div>
 }
 
+@if (compareRuns.length === 2) {
+  <div class="card" style="margin-top:1.5rem;">
+    <h3>Comparing runs</h3>
+    <div class="compare-grid">
+      @for (run of compareRuns; track run.id) {
+        <div class="compare-col">
+          <h4>{{ run.runName }}</h4>
+          <p class="subtitle">Top-K {{ run.topK ?? '—' }} · {{ run.retrievalMode ?? '—' }}</p>
+          <app-metric-bar label="RAG Score" [value]="run.avgRagScore"></app-metric-bar>
+          <app-metric-bar label="Precision@K" [value]="run.avgPrecision"></app-metric-bar>
+          <app-metric-bar label="Recall" [value]="run.avgRecall"></app-metric-bar>
+          <app-metric-bar label="Hit Rate" [value]="run.avgHitRate"></app-metric-bar>
+          <app-metric-bar label="Answer Relevance" [value]="run.avgAnswerRelevance"></app-metric-bar>
+          <app-metric-bar label="Faithfulness" [value]="run.avgFaithfulness"></app-metric-bar>
+          <app-metric-bar label="Hallucination Rate" [value]="run.avgHallucinationRate"></app-metric-bar>
+          <p class="subtitle" style="margin-top:0.5rem;">
+            Avg retrieval {{ run.avgRetrievalLatencyMs ?? '—' }}ms · Avg generation {{ run.avgGenerationLatencyMs ?? '—' }}ms
+            · Total cost {{ run.totalCostUsd === null ? 'N/A' : ('$' + (run.totalCostUsd | number: '1.4-6')) }}
+          </p>
+        </div>
+      }
+    </div>
+    <p class="subtitle" style="margin-top:0.75rem;">
+      RAG Score delta ({{ compareRuns[0].runName }} − {{ compareRuns[1].runName }}):
+      <strong [class.positive]="metricDelta(compareRuns[0].avgRagScore, compareRuns[1].avgRagScore) > 0"
+              [class.negative]="metricDelta(compareRuns[0].avgRagScore, compareRuns[1].avgRagScore) < 0">
+        {{ metricDelta(compareRuns[0].avgRagScore, compareRuns[1].avgRagScore) > 0 ? '+' : '' }}{{ metricDelta(compareRuns[0].avgRagScore, compareRuns[1].avgRagScore) }}
+      </strong>
+    </p>
+  </div>
+}
+
 @if (results().length > 0) {
   <div class="card" style="margin-top:1.5rem;">
-    <h3>Per-query results ({{ results().length }})</h3>
+    <div class="row-between">
+      <h3>Per-query results ({{ results().length }})</h3>
+      <a class="btn btn-secondary" [href]="resultsExportUrl" target="_blank">Export results CSV</a>
+    </div>
     @for (r of results(); track r.id) {
       <details class="result-item">
         <summary>
@@ -84,12 +158,19 @@
           <p class="answer-preview">{{ r.generatedAnswer }}</p>
           <app-metric-bar label="Precision@K" [value]="r.precisionAtK"></app-metric-bar>
           <app-metric-bar label="Recall" [value]="r.recall"></app-metric-bar>
+          <app-metric-bar label="Hit Rate" [value]="r.hitRate"></app-metric-bar>
           <app-metric-bar label="MRR" [value]="r.mrr"></app-metric-bar>
           <app-metric-bar label="NDCG" [value]="r.ndcg"></app-metric-bar>
           <app-metric-bar label="Answer Relevance" [value]="r.answerRelevance"></app-metric-bar>
           <app-metric-bar label="Faithfulness" [value]="r.faithfulness"></app-metric-bar>
+          <app-metric-bar label="Hallucination Rate" [value]="r.hallucinationRate"></app-metric-bar>
           <app-metric-bar label="Context Precision" [value]="r.contextPrecision"></app-metric-bar>
           <app-metric-bar label="Context Recall" [value]="r.contextRecall"></app-metric-bar>
+          <p class="subtitle" style="margin-top:0.5rem;">
+            Retrieval {{ r.retrievalLatencyMs ?? '—' }}ms · Generation {{ r.generationLatencyMs ?? '—' }}ms
+            · {{ r.promptTokens ?? '—' }}+{{ r.completionTokens ?? '—' }} tokens
+            · Cost {{ r.estimatedCostUsd === null ? 'N/A' : ('$' + (r.estimatedCostUsd | number: '1.4-6')) }}
+          </p>
         </div>
       </details>
     }

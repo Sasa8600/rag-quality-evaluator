@@ -32,6 +32,29 @@ public class EvaluationResult {
     
     @Column(precision = 3, scale = 2)
     private BigDecimal recall;
+
+    @Column(name = "hit_rate", precision = 3, scale = 2)
+    private BigDecimal hitRate;
+
+    @Column(name = "hallucination_rate", precision = 3, scale = 2)
+    private BigDecimal hallucinationRate;
+
+    @Column(name = "retrieval_latency_ms")
+    private Integer retrievalLatencyMs;
+
+    @Column(name = "generation_latency_ms")
+    private Integer generationLatencyMs;
+
+    @Column(name = "prompt_tokens")
+    private Integer promptTokens;
+
+    @Column(name = "completion_tokens")
+    private Integer completionTokens;
+
+    // Null when the model's per-token price isn't configured (see LlmConfig.Groq) or when
+    // running locally via Ollama, where the marginal cost really is zero — not "unknown".
+    @Column(name = "estimated_cost_usd", precision = 10, scale = 6)
+    private BigDecimal estimatedCostUsd;
     
     @Column(name = "mrr", precision = 5, scale = 4)
     private BigDecimal mrr;

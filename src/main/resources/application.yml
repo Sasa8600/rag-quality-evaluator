@@ -17,10 +17,31 @@ spring:
 server:
   port: 8080
 
+spring.servlet.multipart:
+  max-file-size: 20MB
+  max-request-size: 20MB
+
 ollama:
   base-url: http://localhost:11434
   embedding-model: nomic-embed-text
   generation-model: mistral
+
+# Switch to "cloud" when Ollama can't run (e.g. a free-tier host with too little RAM).
+# Local Ollama stays the default: no keys needed, nothing leaves your machine.
+llm:
+  provider: ${LLM_PROVIDER:ollama}   # ollama | cloud
+  groq:
+    api-key: ${GROQ_API_KEY:}
+    model: openai/gpt-oss-20b
+    # Optional — for approximate $ cost tracking on evaluation runs. Get current pricing
+    # for the model above from Groq's own pricing page and set these two, or leave unset
+    # (token counts are still tracked and stored either way; only the $ figure is skipped).
+    price-per-million-input-tokens: ${GROQ_PRICE_PER_M_INPUT:}
+    price-per-million-output-tokens: ${GROQ_PRICE_PER_M_OUTPUT:}
+  gemini:
+    api-key: ${GEMINI_API_KEY:}
+    model: gemini-embedding-001
+    output-dimensionality: 768
 
 logging:
   level:

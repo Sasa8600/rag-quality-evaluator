@@ -31,8 +31,14 @@
       <app-metric-bar label="RAG Score" [value]="run.avgRagScore"></app-metric-bar>
       <app-metric-bar label="Precision@K" [value]="run.avgPrecision"></app-metric-bar>
       <app-metric-bar label="Recall" [value]="run.avgRecall"></app-metric-bar>
+      <app-metric-bar label="Hit Rate" [value]="run.avgHitRate"></app-metric-bar>
       <app-metric-bar label="Answer Relevance" [value]="run.avgAnswerRelevance"></app-metric-bar>
       <app-metric-bar label="Faithfulness" [value]="run.avgFaithfulness"></app-metric-bar>
+      <app-metric-bar label="Hallucination Rate" [value]="run.avgHallucinationRate"></app-metric-bar>
+      <p class="subtitle" style="margin-top:0.5rem;">
+        Avg retrieval {{ run.avgRetrievalLatencyMs ?? '—' }}ms · Avg generation {{ run.avgGenerationLatencyMs ?? '—' }}ms
+        · Total cost {{ run.totalCostUsd === null ? 'N/A' : ('$' + (run.totalCostUsd | number: '1.4-6')) }}
+      </p>
     </div>
   } @else if (!loading()) {
     <div class="card empty-card" style="margin-top:1.5rem;">

@@ -6,3 +6,7 @@
 .doc-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 0.5rem; }
 .doc-table th { text-align: left; color: var(--text-secondary); font-weight: 500; padding: 0.4rem; border-bottom: 1px solid var(--border); }
 .doc-table td { padding: 0.4rem; border-bottom: 1px solid var(--border); }
+
+.divider { color: var(--text-secondary); font-size: 0.8rem; margin: 1rem 0; text-align: center; }
+
+.link-toggle { background: none; border: none; color: var(--accent); font-size: 0.8rem; cursor: pointer; padding: 0.5rem 0; }

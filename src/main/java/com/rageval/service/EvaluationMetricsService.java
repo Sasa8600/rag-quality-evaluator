@@ -60,6 +60,25 @@ public class EvaluationMetricsService {
         double recall = (double) relevantFound / relevantChunkIds.size();
         return BigDecimal.valueOf(recall).setScale(2, RoundingMode.HALF_UP);
     }
+
+    /**
+     * Hit Rate — the simplest possible retrieval sanity check: did we get AT LEAST ONE
+     * relevant chunk in the top-K, yes or no? Unlike Recall (what fraction of all relevant
+     * chunks did we find) this doesn't care how many, only whether retrieval missed
+     * completely. Useful as a quick, easy-to-explain floor metric: if Hit Rate is low,
+     * retrieval is fundamentally broken for that query, no need to even look at the
+     * finer-grained metrics yet.
+     */
+    public BigDecimal computeHitRate(List<Long> retrievedChunkIds, List<Long> relevantChunkIds) {
+        if (relevantChunkIds == null || relevantChunkIds.isEmpty()) {
+            return BigDecimal.ONE;
+        }
+        if (retrievedChunkIds == null || retrievedChunkIds.isEmpty()) {
+            return BigDecimal.ZERO;
+        }
+        boolean hit = retrievedChunkIds.stream().anyMatch(relevantChunkIds::contains);
+        return hit ? BigDecimal.ONE : BigDecimal.ZERO;
+    }
     
     /**
      * Compute MRR (Mean Reciprocal Rank)
@@ -198,12 +217,38 @@ public class EvaluationMetricsService {
                                      BigDecimal faithfulness,
                                      BigDecimal contextPrecision) {
         try {
-            BigDecimal score = precision.multiply(BigDecimal.valueOf(0.3))
-                    .add(recall.multiply(BigDecimal.valueOf(0.2)))
-                    .add(answerRelevance.multiply(BigDecimal.valueOf(0.2)))
-                    .add(faithfulness.multiply(BigDecimal.valueOf(0.15)))
-                    .add(contextPrecision.multiply(BigDecimal.valueOf(0.15)));
-            
+            // precision and recall depend on a test query having ground-truth relevant chunk
+            // IDs, which is optional. When either is missing (null), its weight is redistributed
+            // proportionally across the metrics that are always computable (answerRelevance,
+            // faithfulness, contextPrecision) instead of silently treating the missing metric
+            // as 0 — that would drag every ground-truth-free query's RAG score down toward zero
+            // regardless of actual answer quality, which is misleading, not a real score.
+            double wPrecision = precision != null ? 0.30 : 0.0;
+            double wRecall = recall != null ? 0.20 : 0.0;
+            double wAnswerRelevance = 0.20;
+            double wFaithfulness = 0.15;
+            double wContextPrecision = 0.15;
+
+            double missingWeight = (precision == null ? 0.30 : 0.0) + (recall == null ? 0.20 : 0.0);
+            if (missingWeight > 0) {
+                double alwaysOnTotal = wAnswerRelevance + wFaithfulness + wContextPrecision;
+                double scale = (alwaysOnTotal + missingWeight) / alwaysOnTotal;
+                wAnswerRelevance *= scale;
+                wFaithfulness *= scale;
+                wContextPrecision *= scale;
+            }
+
+            BigDecimal score = BigDecimal.ZERO;
+            if (precision != null) {
+                score = score.add(precision.multiply(BigDecimal.valueOf(wPrecision)));
+            }
+            if (recall != null) {
+                score = score.add(recall.multiply(BigDecimal.valueOf(wRecall)));
+            }
+            score = score.add(answerRelevance.multiply(BigDecimal.valueOf(wAnswerRelevance)))
+                    .add(faithfulness.multiply(BigDecimal.valueOf(wFaithfulness)))
+                    .add(contextPrecision.multiply(BigDecimal.valueOf(wContextPrecision)));
+
             return score.setScale(2, RoundingMode.HALF_UP);
         } catch (Exception e) {
             log.error("Error computing RAG score", e);

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <!-- Local/dev default: human-readable console pattern, still includes traceId from MDC -->
+    <springProfile name="default | dev">
+        <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder>
+                <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level [trace=%X{traceId:-none} run=%X{runName:-} query=%X{queryId:-}] %logger{36} - %msg%n</pattern>
+            </encoder>
+        </appender>
+    </springProfile>
+
+    <!-- prod/json profile: structured JSON logs, one line per event, all MDC fields included -->
+    <springProfile name="prod | json">
+        <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+                <includeMdcKeyName>traceId</includeMdcKeyName>
+                <includeMdcKeyName>queryId</includeMdcKeyName>
+                <includeMdcKeyName>runName</includeMdcKeyName>
+                <customFields>{"service":"rag-quality-evaluator"}</customFields>
+            </encoder>
+        </appender>
+    </springProfile>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE" />
+    </root>
+
+    <logger name="com.rageval" level="DEBUG" />
+
+</configuration>

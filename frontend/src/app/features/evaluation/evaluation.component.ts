@@ -3,8 +3,9 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { EvaluationApiService } from '../../core/services/evaluation-api.service';
+import { API_BASE_URL } from '../../core/services/api.config';
 import { ProgressWsService } from '../../core/services/progress-ws.service';
-import { EvaluationResult, EvaluationRun, TestQuery } from '../../core/models/rag.models';
+import { EvaluationResult, EvaluationRun, RetrievalMode, TestQuery } from '../../core/models/rag.models';
 import { MetricBarComponent } from '../../shared/metric-bar/metric-bar.component';
 
 @Component({
@@ -31,6 +32,22 @@ export class EvaluationComponent implements OnInit, OnDestroy {
   readonly lastRagScore = signal<number | null>(null);
 
   runName = 'batch-eval-run';
+  topK = 3;
+  retrievalMode: RetrievalMode = 'VECTOR';
+
+  readonly compareIds = signal<number[]>([]);
+
+  // Custom test query form. relevantDocIds is optional on purpose — most people testing
+  // their own uploaded documents don't know a chunk's internal database ID, and leaving it
+  // blank just means Precision@K/Recall/MRR/NDCG/Context Recall report as N/A for that query
+  // instead of the previous, misleading 0.00.
+  readonly addingQuery = signal(false);
+  newQueryText = '';
+  newExpectedAnswer = '';
+  newRelevantDocIds = '';
+
+  readonly resultsExportUrl = `${API_BASE_URL}/evaluation/results/export`;
+  readonly runsExportUrl = `${API_BASE_URL}/evaluation/runs/export`;
 
   private wsSub?: Subscription;
 
@@ -79,6 +96,38 @@ export class EvaluationComponent implements OnInit, OnDestroy {
     });
   }
 
+  addTestQuery(): void {
+    if (!this.newQueryText.trim()) {
+      this.error.set('Enter a query before adding it.');
+      return;
+    }
+    this.addingQuery.set(true);
+    this.error.set(null);
+    this.successMsg.set(null);
+    const relevantDocIds = this.newRelevantDocIds.trim() || null;
+    this.evalApi.createTestQuery(this.newQueryText.trim(), this.newExpectedAnswer.trim(), relevantDocIds).subscribe({
+      next: () => {
+        this.newQueryText = '';
+        this.newExpectedAnswer = '';
+        this.newRelevantDocIds = '';
+        this.addingQuery.set(false);
+        this.successMsg.set('Test query added.');
+        this.load();
+      },
+      error: (err) => {
+        this.error.set(err?.error?.message ?? 'Failed to add test query.');
+        this.addingQuery.set(false);
+      },
+    });
+  }
+
+  deleteTestQuery(id: number): void {
+    this.evalApi.deleteTestQuery(id).subscribe({
+      next: () => this.load(),
+      error: () => this.error.set('Failed to delete test query.'),
+    });
+  }
+
   seed(): void {
     this.seeding.set(true);
     this.error.set(null);
@@ -110,7 +159,7 @@ export class EvaluationComponent implements OnInit, OnDestroy {
     this.lastQueryText.set(null);
     this.lastRagScore.set(null);
 
-    this.evalApi.batchEvaluate(this.runName.trim() || 'batch-eval-run').subscribe({
+    this.evalApi.batchEvaluate(this.runName.trim() || 'batch-eval-run', this.topK, this.retrievalMode).subscribe({
       next: (res) => {
         this.successMsg.set(res.message);
         // WebSocket 'complete' event also triggers reload; this covers the case
@@ -128,5 +177,27 @@ export class EvaluationComponent implements OnInit, OnDestroy {
   get progressPct(): number {
     if (this.progressTotal() === 0) return 0;
     return Math.round((this.progressCurrent() / this.progressTotal()) * 100);
+  }
+
+  toggleCompare(runId: number): void {
+    const current = this.compareIds();
+    if (current.includes(runId)) {
+      this.compareIds.set(current.filter(id => id !== runId));
+      return;
+    }
+    if (current.length >= 2) {
+      this.compareIds.set([current[1], runId]);
+      return;
+    }
+    this.compareIds.set([...current, runId]);
+  }
+
+  get compareRuns(): EvaluationRun[] {
+    const ids = this.compareIds();
+    return ids.map(id => this.runs().find(r => r.id === id)).filter((r): r is EvaluationRun => !!r);
+  }
+
+  metricDelta(a: number, b: number): number {
+    return Math.round((a - b) * 100) / 100;
   }
 }

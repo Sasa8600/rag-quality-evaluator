@@ -5,6 +5,22 @@
   <label>Your question</label>
   <textarea [(ngModel)]="query" rows="3" placeholder="e.g. What is KYC compliance?"
             (keydown.enter)="$event.preventDefault(); ask()"></textarea>
+
+  <div class="options-row">
+    <div>
+      <label>Top-K (chunks retrieved)</label>
+      <input type="number" [(ngModel)]="topK" min="1" max="10" style="width:100px;" />
+    </div>
+    <div>
+      <label>Retrieval mode</label>
+      <select [(ngModel)]="retrievalMode">
+        <option value="VECTOR">Vector (semantic)</option>
+        <option value="KEYWORD">Keyword (full-text)</option>
+        <option value="HYBRID">Hybrid (both, RRF-fused)</option>
+      </select>
+    </div>
+  </div>
+
   <button class="btn" style="margin-top:0.75rem;" (click)="ask()" [disabled]="loading()">
     {{ loading() ? 'Thinking…' : 'Ask' }}
   </button>
@@ -17,6 +33,7 @@
 @if (result(); as res) {
   <div class="card" style="margin-top:1.5rem;">
     <span class="badge info">{{ res.retrievedChunks }} chunks retrieved</span>
+    @if (res.retrievalMode) { <span class="badge info">{{ res.retrievalMode }}</span> }
     <h3 style="margin-top:0.75rem;">Answer</h3>
     <p class="answer">{{ res.answer }}</p>
   </div>

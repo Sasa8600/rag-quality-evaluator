@@ -14,9 +14,12 @@ import java.util.Optional;
 @Repository
 public interface EmbeddingRepository extends JpaRepository<Embedding, Long> {
     
+    // BUG FIX (was ordering ASC on similarity = returned the LEAST similar chunks).
+    // pgvector's <=> is cosine DISTANCE (0 = identical), so ordering ASC on the
+    // raw distance correctly returns nearest neighbours first.
     @Query(value = "SELECT e.* FROM embeddings e " +
-           "ORDER BY (1 - (e.embedding <=> CAST(:queryEmbedding AS vector))) ASC " +
-           "LIMIT :topK", 
+           "ORDER BY e.embedding <=> CAST(:queryEmbedding AS vector) ASC " +
+           "LIMIT :topK",
            nativeQuery = true)
     List<Embedding> findMostSimilar(@Param("queryEmbedding") String queryEmbedding, @Param("topK") int topK);
 

@@ -2,7 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { API_BASE_URL } from './api.config';
-import { EvaluationResult, EvaluationRun, TestQuery } from '../models/rag.models';
+import { EvaluationResult, EvaluationRun, RetrievalMode, TestQuery } from '../models/rag.models';
 
 interface ApiResponse<T> {
   status: string;
@@ -24,13 +24,27 @@ export class EvaluationApiService {
     return this.http.get<{ status: string; queries: TestQuery[]; count: number }>(`${this.base}/test-queries`);
   }
 
+  createTestQuery(queryText: string, expectedAnswer: string, relevantDocIds: string | null):
+      Observable<{ status: string; testQuery: TestQuery; message?: string }> {
+    return this.http.post<{ status: string; testQuery: TestQuery; message?: string }>(
+      `${this.base}/test-queries`, { queryText, expectedAnswer, relevantDocIds });
+  }
+
+  deleteTestQuery(id: number): Observable<{ status: string; message?: string }> {
+    return this.http.delete<{ status: string; message?: string }>(`${this.base}/test-queries/${id}`);
+  }
+
   evaluateQuery(queryId: number): Observable<{ status: string; result: EvaluationResult }> {
     return this.http.post<{ status: string; result: EvaluationResult }>(
       `${this.base}/evaluate-query/${queryId}`, {});
   }
 
-  batchEvaluate(runName: string): Observable<{ status: string; run: EvaluationRun; message: string }> {
-    const params = new HttpParams().set('runName', runName);
+  batchEvaluate(runName: string, topK: number = 3, retrievalMode: RetrievalMode = 'VECTOR'):
+      Observable<{ status: string; run: EvaluationRun; message: string }> {
+    const params = new HttpParams()
+      .set('runName', runName)
+      .set('topK', String(topK))
+      .set('retrievalMode', retrievalMode);
     return this.http.post<{ status: string; run: EvaluationRun; message: string }>(
       `${this.base}/batch-evaluate`, {}, { params });
   }

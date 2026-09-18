@@ -65,6 +65,13 @@
             <artifactId>spring-boot-starter-webflux</artifactId>
         </dependency>
 
+        <!-- PDF text extraction (Phase 4: PDF ingestion) -->
+        <dependency>
+            <groupId>org.apache.pdfbox</groupId>
+            <artifactId>pdfbox</artifactId>
+            <version>3.0.3</version>
+        </dependency>
+
         <!-- API Documentation (Swagger UI at /swagger-ui.html) -->
         <dependency>
             <groupId>org.springdoc</groupId>
@@ -95,6 +102,13 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-logging</artifactId>
+        </dependency>
+
+        <!-- Structured JSON logging (MDC trace-id aware) -->
+        <dependency>
+            <groupId>net.logstash.logback</groupId>
+            <artifactId>logstash-logback-encoder</artifactId>
+            <version>7.4</version>
         </dependency>
 
         <!-- Apache Commons (PDF parsing later) -->

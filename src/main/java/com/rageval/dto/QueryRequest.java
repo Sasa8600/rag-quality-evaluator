@@ -1,4 +1,6 @@
 package com.rageval.dto;
 
-public record QueryRequest(String query) {
+import com.rageval.model.RetrievalMode;
+
+public record QueryRequest(String query, Integer topK, RetrievalMode retrievalMode) {
 }

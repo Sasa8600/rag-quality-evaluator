@@ -1,7 +1,15 @@
 <div class="metric-row">
   <span class="metric-label">{{ label }}</span>
   <div class="metric-track">
-    <div class="metric-fill" [class]="level" [style.width.%]="pct"></div>
+    @if (isAvailable) {
+      <div class="metric-fill" [class]="level" [style.width.%]="pct"></div>
+    } @else {
+      <div class="metric-fill unavailable" style="width:100%"></div>
+    }
   </div>
-  <span class="metric-value">{{ (value ?? 0) | number: '1.2-2' }}</span>
+  @if (isAvailable) {
+    <span class="metric-value">{{ value | number: '1.2-2' }}</span>
+  } @else {
+    <span class="metric-value metric-na" title="No ground truth (relevantDocIds) to compute this against">N/A</span>
+  }
 </div>

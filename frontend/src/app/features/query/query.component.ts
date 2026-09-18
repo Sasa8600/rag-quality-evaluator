@@ -2,7 +2,7 @@ import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RagApiService } from '../../core/services/rag-api.service';
-import { QueryResponse } from '../../core/models/rag.models';
+import { QueryResponse, RetrievalMode } from '../../core/models/rag.models';
 
 @Component({
   selector: 'app-query',
@@ -13,6 +13,8 @@ import { QueryResponse } from '../../core/models/rag.models';
 })
 export class QueryComponent {
   query = '';
+  topK = 3;
+  retrievalMode: RetrievalMode = 'VECTOR';
   readonly loading = signal(false);
   readonly result = signal<QueryResponse | null>(null);
   readonly error = signal<string | null>(null);
@@ -24,7 +26,7 @@ export class QueryComponent {
     this.loading.set(true);
     this.error.set(null);
     this.result.set(null);
-    this.ragApi.query(this.query.trim()).subscribe({
+    this.ragApi.query(this.query.trim(), this.topK, this.retrievalMode).subscribe({
       next: (res) => {
         this.result.set(res);
         this.loading.set(false);

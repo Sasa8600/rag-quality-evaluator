@@ -12,6 +12,12 @@ export class MetricBarComponent {
   @Input() label = '';
   @Input() value: number | null | undefined = 0;
 
+  // null/undefined means "no ground truth to compute this against" (see EvaluationResult),
+  // which is a different thing from an actual 0.00 score — the two must not render the same way.
+  get isAvailable(): boolean {
+    return this.value !== null && this.value !== undefined;
+  }
+
   get pct(): number {
     const v = this.value ?? 0;
     return Math.max(0, Math.min(1, v)) * 100;

@@ -17,11 +17,38 @@
     <label>Content</label>
     <textarea [(ngModel)]="content" rows="6" placeholder="Paste document text..."></textarea>
   </div>
+
+  <button class="link-toggle" (click)="showAdvanced = !showAdvanced" type="button">
+    {{ showAdvanced ? '− Hide' : '+ Show' }} advanced chunking options
+  </button>
+  @if (showAdvanced) {
+    <div class="form-grid" style="margin-top:0.5rem;">
+      <div>
+        <label>Chunk size (chars, default 500)</label>
+        <input type="number" [(ngModel)]="chunkSize" min="50" placeholder="500" />
+      </div>
+      <div>
+        <label>Overlap (chars, default 50)</label>
+        <input type="number" [(ngModel)]="overlap" min="0" placeholder="50" />
+      </div>
+    </div>
+  }
+
   @if (error()) { <p class="msg error">{{ error() }}</p> }
   @if (successMsg()) { <p class="msg success">{{ successMsg() }}</p> }
   <button class="btn" style="margin-top:0.75rem;" (click)="submit()" [disabled]="submitting()">
     {{ submitting() ? 'Ingesting…' : 'Ingest document' }}
   </button>
+
+  <div class="divider">or</div>
+
+  <div>
+    <label>Upload a PDF (uses the same Name/Source above if filled in)</label>
+    <input type="file" accept="application/pdf" (change)="onFileSelected($event)" />
+    <button class="btn btn-secondary" style="margin-top:0.5rem;" (click)="uploadPdf()" [disabled]="pdfUploading()">
+      {{ pdfUploading() ? 'Extracting…' : 'Upload & ingest PDF' }}
+    </button>
+  </div>
 </div>
 
 <div class="card" style="margin-top:1.5rem;">
